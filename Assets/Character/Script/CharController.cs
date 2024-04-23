@@ -4,31 +4,73 @@ using UnityEngine;
 
 public class CharController : MonoBehaviour
 {
-    public float speed = 10.0f;
-    public float rotationSpeed = 100.0f;
-    public float jumpForce = 10;
+    public float WalkSpeed = 5f;
+    public float SprintMultiplier = 2f;
+    public float JumpForce = 5f;
+    public float TrampoForce = 50f;
+    public float GroundCheckDistance = 1.5f;
+    public float LookSensitivityX = 1f;
+    public float LookSensitivityY = 1f;
+    public float MinYLookAngle = -90f;
+    public float MaxYLookAngle = 90f;
+    public Transform PlayerCamera;
+    public float Gravity = -9.8f;
+    private Vector3 velocity;
+    private float verticalRotation;
 
-    // Update is called once per frame
-    void Update()
-    {
-        // Get the horizontal and vertical axis.
-        // By default they are mapped to the arrow keys.
-        // The value is in the range -1 to 1
-        float translation = Input.GetAxis("Vertical") * speed;
-        float rotation = Input.GetAxis("Horizontal") * rotationSpeed;
+    private CharacterController characterController;
 
-        // Make it move 10 meters per second instead of 10 meters per frame...
-        translation *= Time.deltaTime;
-        rotation *= Time.deltaTime;
+    private void Awake() {
+        characterController = GetComponent<CharacterController>();
+        Cursor.lockState = CursorLockMode.Locked;
+    }
 
-        // Move translation along the object's z-axis
-        transform.Translate(0, 0, translation);
+    private void Update() {
+        float horizontalMovement = Input.GetAxis("Horizontal");
+        float verticalMovement = Input.GetAxis("Vertical");
 
-        // Rotate around our y-axis
-        transform.Rotate(0, rotation, 0);
+        Vector3 moveDirection = transform.forward * verticalMovement + transform.right * horizontalMovement;
+        moveDirection.Normalize();
 
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            GetComponentInChildren<Rigidbody>().AddForce(Vector3.up * jumpForce,ForceMode.Impulse);
+        float speed = WalkSpeed;
+
+        if (Input.GetKey(KeyCode.LeftAlt)) {
+            speed *= SprintMultiplier;
         }
+
+        characterController.Move(speed * Time.deltaTime * moveDirection);
+
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, GroundCheckDistance)) {
+            if (hit.transform.tag.Equals("Trampo")){
+                velocity.y = TrampoForce;
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded()) {
+            velocity.y = JumpForce;
+        } else {
+            velocity.y += Gravity * Time.deltaTime;
+        }
+
+        characterController.Move(velocity * Time.deltaTime);
+
+        if (PlayerCamera != null){
+            float mouseX = Input.GetAxis("Mouse X") * LookSensitivityX;
+            float mouseY = Input.GetAxis("Mouse Y") * LookSensitivityY;
+
+            verticalRotation -= mouseY;
+            verticalRotation = Mathf.Clamp(verticalRotation, MinYLookAngle, MaxYLookAngle);
+
+            PlayerCamera.localRotation = Quaternion.Euler(verticalRotation,0f,0f);
+            transform.Rotate(Vector3.up * mouseX);
+        }
+    }
+
+    bool IsGrounded() {
+        if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, GroundCheckDistance))
+        {
+            return true;
+        }
+        return false;
     }
 }
