@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2837284692489721076}
   - component: {fileID: 3995425939253356413}
   - component: {fileID: 4372951588770188376}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Trampo
   m_TagString: Trampo
   m_Icon: {fileID: 0}
