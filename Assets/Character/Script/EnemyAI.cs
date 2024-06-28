@@ -26,9 +26,15 @@ public class EnemyAI : MonoBehaviour
     public float sightRange, attackRange;
     public bool playerInSightRange, playerInAttackRange;
 
+    private Animator animator;
+
     private void Awake() {
         player = GameObject.Find("Player").transform;
         agent = GetComponent<NavMeshAgent>();
+
+        
+        animator = GetComponentInChildren<Animator>();
+        animator.enabled = true;
     }
     
     private void Update() {
@@ -37,12 +43,18 @@ public class EnemyAI : MonoBehaviour
 
         if (!playerInSightRange && !playerInAttackRange) {
             Patroling();
+            animator.SetBool("walking",true);
+            animator.SetBool("shooting", false);
         }
         if (playerInSightRange && !playerInAttackRange) {
             ChasePlayer();
+            animator.SetBool("walking", true);
+            animator.SetBool("shooting", false);
         }
         if (playerInSightRange && playerInAttackRange) {
             AttackPlayer();
+            animator.SetBool("shooting", true);
+            animator.SetBool("walking", false);
         }
     }
 
@@ -80,7 +92,7 @@ public class EnemyAI : MonoBehaviour
 
         transform.LookAt(player);
 
-        if(!alreadyAttacked) {
+        if(!alreadyAttacked && health > 0) {
             Rigidbody rb = Instantiate(projectile, transform.position + transform.forward, Quaternion.identity).GetComponent<Rigidbody>();
             rb.AddForce(transform.forward *32f, ForceMode.Impulse);
             rb.AddForce(transform.up *3f, ForceMode.Impulse);
@@ -98,7 +110,10 @@ public class EnemyAI : MonoBehaviour
         health -= damage;
 
         if (health < 0){
-            Invoke(nameof(DestroyEnemy),0.5f);
+            animator.SetBool("shooting", false);
+            animator.SetBool("walking", false);
+            animator.SetTrigger("dying");
+            Invoke(nameof(DestroyEnemy),4.3f);
         }
     }
 
